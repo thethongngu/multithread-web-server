@@ -80,3 +80,14 @@ impl Drop for ThreadPool {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::ThreadPool;
+
+    #[test]
+    fn test_correct_number_of_thread() {
+        let pool = ThreadPool::new(3);
+        assert_eq!(pool.workers.len(), 3);
+    }
+}
