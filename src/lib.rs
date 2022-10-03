@@ -3,6 +3,7 @@ use std::{
     thread,
 };
 
+/// Job is trait object that implement `Send` to safely passed between thread. `'static` to make sure lifetime long enough.
 type Job = Box<dyn FnOnce() + Send + 'static>;
 
 struct Worker {
@@ -11,6 +12,7 @@ struct Worker {
 }
 
 impl Worker {
+    /// Create a new Worker (thread) that hold a mutex to read job from receiver passed from ThreadPool
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             let opt_job = receiver.lock().unwrap().recv();
@@ -36,6 +38,8 @@ pub struct ThreadPool {
 }
 
 impl ThreadPool {
+    /// Create a new ThreadPool will initialize of `size` number of threads. Each thread will have a receiver to receive
+    /// job from ThreadPool
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
@@ -52,6 +56,7 @@ impl ThreadPool {
         }
     }
 
+    /// execute a clousure function (job)
     pub fn execute<F>(&self, f: F)
     where
         F: FnOnce() + Send + 'static,
@@ -62,6 +67,8 @@ impl ThreadPool {
 }
 
 impl Drop for ThreadPool {
+    /// `sender` will be dropped first to help threads (workers) break out of their loop
+    /// All threads is waited to join.
     fn drop(&mut self) {
         drop(self.sender.take());
 
